@@ -7,11 +7,11 @@ from PyQt5.QtWidgets import QApplication, QWidget
 
 class MainWindow(QWidget):
 
-    def __init__(self):
+    def __init__(self, game):
         super().__init__()
 
         self.setWindowTitle("Zachy's Chess")
-        self.setGeometry(300, 300, 800, 800)
+        self.setGeometry(300, 300, 700, 700)
 
         self.widgetSvg = QSvgWidget(parent=self)
         self.svgX = 50                          # top left x-pos of chessboard
@@ -23,7 +23,9 @@ class MainWindow(QWidget):
 
         self.margin = 0.05*self.cbSize if self.coordinates == True else 0
         self.squareSize = (self.cbSize - 2 * self.margin) / 8.0
-        self.chessboard = chess.Board()
+
+        self.game = game
+        self.chessboard = game.board
         self.pieceToMove = [None, None]
 
     @pyqtSlot(QWidget)
@@ -40,13 +42,19 @@ class MainWindow(QWidget):
                     square = chess.square(file, rank)
                     piece = self.chessboard.piece_at(square)
                     coordinates = '{}{}'.format(chr(file + 97), str(rank + 1))
+                    
                     if self.pieceToMove[0] is not None:
-                        move = chess.Move.from_uci('{}{}'.format(
-                            self.pieceToMove[1], coordinates))
-                        self.chessboard.push(move)
-                        print(self.chessboard.fen())
+                        try:
+                            self.game.play(self.pieceToMove[1] + coordinates)
+                        except Exception as e:
+                            print(e) # TODO
                         piece = None
                         coordinates = None
+
+                    elif piece is not None: 
+                        if piece.color == self.game.white_next: # True if both white or both black
+                            pass # Add color change here
+
                     self.pieceToMove = [piece, coordinates]
                 else:
                     print('coordinates clicked')
@@ -54,6 +62,7 @@ class MainWindow(QWidget):
                 self.update()
         else:
             QWidget.mousePressEvent(self, event)
+
 
     @pyqtSlot(QWidget)
     def paintEvent(self, event):
@@ -64,7 +73,10 @@ class MainWindow(QWidget):
 
 if __name__ == '__main__':
 
+    import game
+    game = game.Game()
+
     app = QApplication([])
-    window = MainWindow()
+    window = MainWindow(game)
     window.show()
     app.exec()
