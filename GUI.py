@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QApplication, QWidget
 
+
 class MainWindow(QWidget):
 
     def __init__(self, game):
@@ -26,6 +27,7 @@ class MainWindow(QWidget):
 
         self.game = game
         self.chessboard = game.board
+        self.selectedPiece = None
         self.pieceToMove = [None, None]
 
     @pyqtSlot(QWidget)
@@ -42,18 +44,16 @@ class MainWindow(QWidget):
                     square = chess.square(file, rank)
                     piece = self.chessboard.piece_at(square)
                     coordinates = '{}{}'.format(chr(file + 97), str(rank + 1))
-                    
+
+                    self.selectedPiece = None
                     if self.pieceToMove[0] is not None:
-                        try:
-                            self.game.play(self.pieceToMove[1] + coordinates)
-                        except Exception as e:
-                            print(e) # TODO
+                        self.makeMove(coordinates)
                         piece = None
                         coordinates = None
 
-                    elif piece is not None: 
-                        if piece.color == self.game.white_next: # True if both white or both black
-                            pass # Add color change here
+                    elif piece is not None:
+                        if piece.color == self.game.white_next:  # True if both white or both black
+                            self.selectedPiece = square
 
                     self.pieceToMove = [piece, coordinates]
                 else:
@@ -63,18 +63,24 @@ class MainWindow(QWidget):
         else:
             QWidget.mousePressEvent(self, event)
 
-
     @pyqtSlot(QWidget)
     def paintEvent(self, event):
         self.chessboardSvg = chess.svg.board(
-            self.chessboard, size=self.cbSize, coordinates=self.coordinates).encode("UTF-8")
+            self.chessboard, size=self.cbSize, coordinates=self.coordinates, check=self.selectedPiece).encode("UTF-8")
         self.widgetSvg.load(self.chessboardSvg)
 
+    def makeMove(self, coordinates):
+        # TODO: Show invalid move, winning, etc.
+        try:
+            self.game.play(self.pieceToMove[1] + coordinates)
+        except Exception as e:
+            print(e)
+        
 
 if __name__ == '__main__':
 
     import game
-    game = game.Game()
+    game = game.Game(False)
 
     app = QApplication([])
     window = MainWindow(game)

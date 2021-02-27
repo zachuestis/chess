@@ -64,7 +64,7 @@ class Game():
 
 if __name__ == '__main__':
 
-    game = Game() 
+    game = Game(False) 
     mate_sequence = ['e2e4', 'e7e5', 'd1h5', 'e8e7', 'h5e5']
     white_sequence = mate_sequence[::2]
     black_sequence = mate_sequence[1::2]
