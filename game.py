@@ -1,7 +1,7 @@
 import chess
 import chess.svg
 
-import random
+from ai import AI
 
 class Game():
 
@@ -9,6 +9,7 @@ class Game():
         self.board = chess.Board()
         self.white_next = True
         self.black_auto = black_auto
+        self.ai = AI()
 
     def play(self, move_name):
         if self.white_next:
@@ -35,8 +36,7 @@ class Game():
     def play_black(self, move_name):
 
         if move_name == 'auto':
-            moves = [move for move in self.board.legal_moves]
-            move = random.choice(moves)
+            move = self.ai.choose_move(self.board.legal_moves)
         else:
             move = chess.Move.from_uci(move_name)
 
