@@ -74,4 +74,25 @@ if __name__ == '__main__':
             game.play_white(move)
         else:
             game.play_black(move)
+ import pygame
+ import pygame.freetype
+ from pygame.sprite import Sprite    
+ from pygame.rect import Rect
+
+  BLUE = (106, 159, 181)
+  WHITE = (255, 255, 255)
+
+
+  def create_surface_with_text (text, font_size, text_rgb, bg_rgb):
+      font = pygame.freetype.Sysfont("Courier", font_size, bold=True)
+      surface, _ = font.render (text = text, fgcolor=text_rgb, bgcolor=bg_rgb)
+      return surface.convert_alpha
+
+
+class UIElements(Sprite):
+    def __init__(self, center_position, text, font_size, bg_rgb, text_rgb):
+
+        
+
+
 
