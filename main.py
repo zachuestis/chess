@@ -1,27 +1,26 @@
 from game import Game
 
-MODE = 'Semi-auto' # 'Manual' 'Semi-auto' 'Auto'
+MODE = 'white-auto'
+GUI = True
 
-if MODE == 'Auto':
-    # TODO
-    pass
+game = Game(MODE, delay=None)
 
-elif MODE == 'Manual' or 'Semi-auto':
-
+if GUI:
     from GUI import MainWindow
     from PyQt5.QtWidgets import QApplication
-
-    if MODE == 'Semi-auto':
-        game = Game(True)
-    else:
-        game = Game(False)
 
     app = QApplication([])
     window = MainWindow(game)
     window.show()
     app.exec()
 
+elif MODE == 'auto':
+    try:
+        game.play()
+    except Exception as e:
+        print(e)
+    
 else:
-    raise Exception('Invalid game mode')
+    raise Exception("Invalid Mode")
 
 
