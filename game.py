@@ -13,7 +13,14 @@ class Game():
         self.white = AI() \
             if game_mode in ['auto', 'white-auto'] else None
         self.black = AI() \
-            if game_mode in ['auto', 'black-auto'] else None   
+            if game_mode in ['auto', 'black-auto'] else None
+
+    def change_mode(self, game_mode):
+        self.game_mode = game_mode
+        self.white = AI() \
+            if game_mode in ['auto', 'white-auto'] else None
+        self.black = AI() \
+            if game_mode in ['auto', 'black-auto'] else None
 
     def play(self, move_name=None):
         if move_name is None:

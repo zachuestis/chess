@@ -3,7 +3,11 @@ import chess.svg
 
 from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox 
+from PyQt5.QtGui import QFont
+
+GAME_MODES = ['Play White', 'Play Black', 'Two Player', 'Auto']
+_GAME_MODES = ['black-auto', 'white-auto', 'manual', 'auto']
 
 
 class MainWindow(QWidget):
@@ -26,30 +30,47 @@ class MainWindow(QWidget):
         self.margin = 0.05*self.cbSize if self.coordinates == True else 0
         self.squareSize = (self.cbSize - 2 * self.margin) / 8.0
 
+        # Chess game
+        self.game = game
+        self.chessboard = game.board
+        self.game_mode = _GAME_MODES[0]
         self.selectedPiece = None
         self.pieceToMove = [None, None]
+        self.next_move = None
+        self.move_signal.connect(self.newMove)
 
         # Starting Screen
         self.starting_screen()
         self.playing = False
 
-        # Chess game
-        self.game = game
-        self.chessboard = game.board
-        self.next_move = None
-        self.move_signal.connect(self.newMove)
-
     def starting_screen(self):
-        # TODO: add more visuals, choose game mode, etc.
-        self.btn = QPushButton('Start', self)
-        self.btn.resize(self.btn.sizeHint())
-        self.btn.move(350 - self.btn.size().width()/2, 400)
-        self.btn.clicked.connect(self.startButtonEvent)
+        self.chessboardSvg = chess.svg.board(self.chessboard, size=self.cbSize).encode("UTF-8")
+        self.widgetSvg.load(self.chessboardSvg)
+
+        self.startBtn = QPushButton('Start', self)
+        self.startBtn.resize(self.startBtn.sizeHint())
+        self.startBtn.clicked.connect(self.startButtonEvent)
+
+        self.modeSelector = QComboBox()
+        self.modeSelector.addItems(GAME_MODES)
+        self.modeSelector.currentIndexChanged.connect(self.modeChange)
+
+        self.vbox = QVBoxLayout()
+        self.vbox.setContentsMargins(295, 260, 295, 260)
+        self.vbox.addWidget(self.modeSelector)
+        self.vbox.addWidget(self.startBtn)
+        self.setLayout(self.vbox)
+
+    def modeChange(self, idx):
+        self.game_mode = _GAME_MODES[idx]
 
     def startButtonEvent(self, event):
-        self.btn.hide()
+        self.startBtn.hide()
+        self.modeSelector.hide()
         self.playing = True
-        if self.game.game_mode == "auto" or self.game.game_mode == "white-auto":
+        self.game.change_mode(self.game_mode)
+
+        if self.game_mode in ["auto", "white-auto"]:
             self.move_signal.emit()
         
         self.update()
@@ -74,7 +95,9 @@ class MainWindow(QWidget):
                         (event.x() - (self.svgX + self.margin))/self.squareSize)
                     rank = 7 - \
                         int((event.y() - (self.svgY + self.margin))/self.squareSize)
-                    # chess.sqare.mirror() # TODO: if white is on top
+                    if self.game_mode == "white-auto": # if white is on top
+                        file = 7 - file
+                        rank = 7 - rank
                     square = chess.square(file, rank)
                     piece = self.chessboard.piece_at(square)
                     coordinates = '{}{}'.format(chr(file + 97), str(rank + 1))
@@ -100,8 +123,9 @@ class MainWindow(QWidget):
     @pyqtSlot(QWidget)
     def paintEvent(self, event):
         if not self.playing: return
+        flipped = True if self.game_mode == 'white-auto' else False
         self.chessboardSvg = chess.svg.board(
-            self.chessboard, size=self.cbSize, coordinates=self.coordinates, check=self.selectedPiece).encode("UTF-8")
+            self.chessboard, size=self.cbSize, coordinates=self.coordinates, check=self.selectedPiece, flipped=flipped).encode("UTF-8")
         self.widgetSvg.load(self.chessboardSvg)
 
 if __name__ == '__main__':
