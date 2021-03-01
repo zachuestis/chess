@@ -3,7 +3,7 @@ import chess.svg
 
 from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox 
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QLabel
 from PyQt5.QtGui import QFont
 
 GAME_MODES = ['Play White', 'Play Black', 'Two Player', 'Auto']
@@ -40,13 +40,12 @@ class MainWindow(QWidget):
         self.move_signal.connect(self.newMove)
 
         # Starting Screen
+        self.vbox = QVBoxLayout()
+        self.vbox.setContentsMargins(295, 300, 295, 300)
+        self.setLayout(self.vbox)
         self.starting_screen()
-        self.playing = False
 
     def starting_screen(self):
-        self.chessboardSvg = chess.svg.board(self.chessboard, size=self.cbSize).encode("UTF-8")
-        self.widgetSvg.load(self.chessboardSvg)
-
         self.startBtn = QPushButton('Start', self)
         self.startBtn.resize(self.startBtn.sizeHint())
         self.startBtn.clicked.connect(self.startButtonEvent)
@@ -55,35 +54,56 @@ class MainWindow(QWidget):
         self.modeSelector.addItems(GAME_MODES)
         self.modeSelector.currentIndexChanged.connect(self.modeChange)
 
-        self.vbox = QVBoxLayout()
-        self.vbox.setContentsMargins(295, 260, 295, 260)
         self.vbox.addWidget(self.modeSelector)
         self.vbox.addWidget(self.startBtn)
-        self.setLayout(self.vbox)
 
-    def modeChange(self, idx):
+    def modeChange(self, idx): 
+        # FIXME: Sometimes selection gets stuck after auto game
         self.game_mode = _GAME_MODES[idx]
 
     def startButtonEvent(self, event):
         self.startBtn.hide()
         self.modeSelector.hide()
-        self.playing = True
         self.game.change_mode(self.game_mode)
-
-        if self.game_mode in ["auto", "white-auto"]:
-            self.move_signal.emit()
-        
         self.update()
+        if self.game_mode in ["auto", "white-auto"]: self.move_signal.emit()
+
+    def gameOver(self, message):
+        self.result = QLabel(message)
+        self.result.resize(self.result.sizeHint())
+        self.result.setStyleSheet("background-color:white; border-radius:5px") # FIXME: Overflows, center text
+        self.replayBtn = QPushButton('Replay', self)
+        self.replayBtn.resize(self.replayBtn.sizeHint())
+        self.replayBtn.clicked.connect(self.retryButtonEvent)
+
+        self.vbox.addWidget(self.result)
+        self.vbox.addWidget(self.replayBtn)
+
+    def retryButtonEvent(self):
+        self.result.hide()
+        self.replayBtn.hide()
+        self.next_move = None
+        self.game_mode = _GAME_MODES[0]
+        self.starting_screen()
 
     def newMove(self):
-        # TODO: Show invalid move, winning, etc.
+        # TODO: Show invalid move, etc.
         # FIXME: Auto does not visualize every move...
         try:
-            self.game.play(self.next_move)
+            result = self.game.play(self.next_move)
+            self.update()
+        
+            if result == 1: # white wins
+                self.gameOver("White won boooiiiii!!")
+            elif result == 2: # black wins
+                self.gameOver("Black won boooiiiii!!")
+            elif result == 3: # draw
+                self.gameOver("issa draw bish...")
+            elif result == 4: # game over
+                self.gameOver("Game Over")
+
         except Exception as e:
             print(e)
-
-        self.update()
         
     @pyqtSlot(QWidget)
     def mousePressEvent(self, event):
@@ -122,10 +142,10 @@ class MainWindow(QWidget):
 
     @pyqtSlot(QWidget)
     def paintEvent(self, event):
-        if not self.playing: return
         flipped = True if self.game_mode == 'white-auto' else False
         self.chessboardSvg = chess.svg.board(
-            self.chessboard, size=self.cbSize, coordinates=self.coordinates, check=self.selectedPiece, flipped=flipped).encode("UTF-8")
+            self.chessboard, size=self.cbSize, coordinates=self.coordinates, 
+            check=self.selectedPiece, flipped=flipped).encode("UTF-8")
         self.widgetSvg.load(self.chessboardSvg)
 
 if __name__ == '__main__':

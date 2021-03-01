@@ -17,6 +17,7 @@ class Game():
 
     def change_mode(self, game_mode):
         self.game_mode = game_mode
+        self.board.reset()
         self.white = AI() \
             if game_mode in ['auto', 'white-auto'] else None
         self.black = AI() \
@@ -28,35 +29,36 @@ class Game():
                 move = self.white.choose_move(self.board)   # White AI
             else:
                 move = self.black.choose_move(self.board)   # Black AI
-            self.playMove(move)
-        else:                                               # Manual
+        else:
             move = chess.Move.from_uci(move_name)
-            self.playMove(move)
+        
+        result = self.playMove(move)       
+        if result is not None: return result
 
-        if (self.white_next and self.white is not None) \
-                or (not self.white_next and self.black is not None):  # Next is AI
+        # Next is AI
+        if (self.white_next and self.white is not None) or (not self.white_next and self.black is not None):
             if self.delay is not None: time.sleep(self.delay)
-            self.play()
+            return self.play()
 
     def playMove(self, move):  # FIXME: Catch Exceptions
         if not move in self.board.legal_moves:
             raise Exception("Dumbass, that shit ain't legal")
-
-        self.board.push(move)
+        else:
+            self.board.push(move)
 
         # Check if game is over
         if self.board.is_checkmate():
             if self.white_next:
-                raise Exception("White won boooiiiii!!")
+                return 1
             else:
-                raise Exception("Black won boooiiiii!!")
+                return 2
         elif self.board.is_insufficient_material() or self.board.is_stalemate():  # draw
-            raise Exception("issa draw bish...")
+            return 3
         elif self.board.is_game_over():
-            raise Exception("The game ended for some reason...")
+            return 4
         else:
             self.white_next = not self.white_next
-
+            return None
 
 if __name__ == '__main__':
 
