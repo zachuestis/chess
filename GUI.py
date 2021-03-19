@@ -29,36 +29,34 @@ class MainWindow(QWidget):
 
         self.margin = 0.05*self.cbSize if self.coordinates == True else 0
         self.squareSize = (self.cbSize - 2 * self.margin) / 8.0
-
-        # Chess game
-        self.game = game
-        self.chessboard = game.board
-        self.game_mode = _GAME_MODES[0]
-        self.selectedPiece = None
-        self.pieceToMove = [None, None]
-        self.next_move = None
-        self.move_signal.connect(self.newMove)
-
-        # Starting Screen
+        # Layout
         self.vbox = QVBoxLayout()
         self.vbox.setContentsMargins(295, 300, 295, 300)
         self.setLayout(self.vbox)
-        self.starting_screen()
+        # Init game
+        self.initializeGame(game)
+        self.move_signal.connect(self.newMove)
 
-    def starting_screen(self):
+    def initializeGame(self, game):
+        # Chess game
+        self.game = game
+        self.chessboard = game.board
+        self.modeChange(0)
+        self.game.change_mode(self.game_mode)
+        self.selectedPiece = None
+        self.pieceToMove = [None, None]
+        self.next_move = None
+        # Starting Screen
         self.startBtn = QPushButton('Start', self)
         self.startBtn.resize(self.startBtn.sizeHint())
         self.startBtn.clicked.connect(self.startButtonEvent)
-
         self.modeSelector = QComboBox()
         self.modeSelector.addItems(GAME_MODES)
         self.modeSelector.currentIndexChanged.connect(self.modeChange)
-
         self.vbox.addWidget(self.modeSelector)
         self.vbox.addWidget(self.startBtn)
 
     def modeChange(self, idx): 
-        # FIXME: Sometimes selection gets stuck after auto game
         self.game_mode = _GAME_MODES[idx]
 
     def startButtonEvent(self, event):
@@ -66,29 +64,20 @@ class MainWindow(QWidget):
         self.modeSelector.hide()
         self.game.change_mode(self.game_mode)
         self.update()
-        if self.game_mode in ["auto", "white-auto"]: self.move_signal.emit()
-
-    def gameOver(self, message):
-        self.result = QLabel(message)
-        self.result.resize(self.result.sizeHint())
-        self.result.setStyleSheet("background-color:white; border-radius:5px") # FIXME: Overflows, center text
-        self.replayBtn = QPushButton('Replay', self)
-        self.replayBtn.resize(self.replayBtn.sizeHint())
-        self.replayBtn.clicked.connect(self.retryButtonEvent)
-
-        self.vbox.addWidget(self.result)
-        self.vbox.addWidget(self.replayBtn)
-
-    def retryButtonEvent(self):
+        if self.game_mode == "auto":
+            # self.hint = QLabel("Press the spacebar to move")
+            # self.hint.resize(self.hint.sizeHint())
+            self.move_signal.emit()
+        elif self.game_mode == "white-auto":
+            self.move_signal.emit()
+        
+    def replayButtonEvent(self):
         self.result.hide()
         self.replayBtn.hide()
-        self.next_move = None
-        self.game_mode = _GAME_MODES[0]
-        self.starting_screen()
+        self.initializeGame(self.game)
 
     def newMove(self):
         # TODO: Show invalid move, etc.
-        # FIXME: Auto does not visualize every move...
         try:
             result = self.game.play(self.next_move)
             self.update()
@@ -101,14 +90,25 @@ class MainWindow(QWidget):
                 self.gameOver("issa draw bish...")
             elif result == 4: # game over
                 self.gameOver("Game Over")
-
         except Exception as e:
             print(e)
+
+    def gameOver(self, message):
+        # FIXME: Box Overflows
+        self.result = QLabel(message)
+        self.result.setAlignment(Qt.AlignCenter)
+        self.result.resize(self.result.sizeHint())
+        self.result.setStyleSheet("background-color:white; border-radius:5px")
+        self.replayBtn = QPushButton('Replay', self)
+        self.replayBtn.resize(self.replayBtn.sizeHint())
+        self.replayBtn.clicked.connect(self.replayButtonEvent)
+        self.vbox.addWidget(self.result)
+        self.vbox.addWidget(self.replayBtn)
         
     @pyqtSlot(QWidget)
     def mousePressEvent(self, event):
         if self.svgX < event.x() <= self.svgX + self.cbSize and self.svgY < event.y() <= self.svgY + self.cbSize:   # mouse on chessboard
-            if event.buttons() == Qt.LeftButton:
+            if event.buttons() == Qt.LeftButton and self.game_mode != "auto":
                 # if the click is on chessBoard only
                 if self.svgX + self.margin < event.x() < self.svgX + self.cbSize - self.margin and self.svgY + self.margin < event.y() < self.svgY + self.cbSize - self.margin:
                     file = int(
@@ -141,6 +141,15 @@ class MainWindow(QWidget):
             QWidget.mousePressEvent(self, event)
 
     @pyqtSlot(QWidget)
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+        elif event.key() == Qt.Key_Space and self.game_mode == "auto":
+            self.move_signal.emit()
+        else:
+            QWidget.keyPressEvent(self, event)
+
+    @pyqtSlot(QWidget)
     def paintEvent(self, event):
         flipped = True if self.game_mode == 'white-auto' else False
         self.chessboardSvg = chess.svg.board(
@@ -151,7 +160,7 @@ class MainWindow(QWidget):
 if __name__ == '__main__':
 
     import game
-    game = game.Game(False)
+    game = game.Game('manual', autoplay=True)
 
     app = QApplication([])
     window = MainWindow(game)

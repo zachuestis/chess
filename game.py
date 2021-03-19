@@ -1,15 +1,14 @@
 import chess
-import time
-
 from ai import AI
+
 
 class Game():
 
-    def __init__(self, game_mode, delay=None):
+    def __init__(self, game_mode, autoplay=True):
         self.board = chess.Board()
         self.white_next = True
         self.game_mode = game_mode
-        self.delay = delay
+        self.autoplay = autoplay
         self.white = AI() \
             if game_mode in ['auto', 'white-auto'] else None
         self.black = AI() \
@@ -31,13 +30,13 @@ class Game():
                 move = self.black.choose_move(self.board)   # Black AI
         else:
             move = chess.Move.from_uci(move_name)
-        
-        result = self.playMove(move)       
-        if result is not None: return result
+
+        result = self.playMove(move)
+        if result is not None:
+            return result
 
         # Next is AI
-        if (self.white_next and self.white is not None) or (not self.white_next and self.black is not None):
-            if self.delay is not None: time.sleep(self.delay)
+        if self.autoplay and ((self.white_next and self.white is not None) or (not self.white_next and self.black is not None)):
             return self.play()
 
     def playMove(self, move):  # FIXME: Catch Exceptions
@@ -60,6 +59,7 @@ class Game():
             self.white_next = not self.white_next
             return None
 
+
 if __name__ == '__main__':
 
     game = Game('Manual')
@@ -69,6 +69,3 @@ if __name__ == '__main__':
 
     for move in mate_sequence:
         game.play(move)
-
-
-
