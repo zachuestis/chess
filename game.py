@@ -9,60 +9,43 @@ class Game():
         self.white_next = True
         self.game_mode = game_mode
         self.autoplay = autoplay
-        self.white = AI() \
+        self.white = AI(self.board) \
             if game_mode in ['auto', 'white-auto'] else None
-        self.black = AI() \
+        self.black = AI(self.board) \
             if game_mode in ['auto', 'black-auto'] else None
 
-    def change_mode(self, game_mode):
-        self.game_mode = game_mode
+    def reset(self):
         self.board.reset()
-        self.white = AI() \
-            if game_mode in ['auto', 'white-auto'] else None
-        self.black = AI() \
-            if game_mode in ['auto', 'black-auto'] else None
+        self.white_next = True
 
     def play(self, move_name=None):
+        legal = False
+        result = None
         if move_name is None:
-            if self.white_next:
-                move = self.white.choose_move(self.board)   # White AI
-            else:
-                move = self.black.choose_move(self.board)   # Black AI
+            move = self.white.choose_move() if self.white_next else self.black.choose_move()
         else:
             move = chess.Move.from_uci(move_name)
-
-        result = self.playMove(move)
-        if result is not None:
-            return result
-
+        # Play move
+        if move in self.board.legal_moves:
+            legal = True
+            self.board.push(move)
+            self.white_next = not self.white_next
+        # Check if game is over
+        if self.board.is_game_over():
+            if self.board.is_checkmate():
+                result = 1 if self.white_next else 0    # 0 if white wins, 1 if black wins
+            elif self.board.is_insufficient_material() or self.board.is_stalemate():
+                result = 2                              # draw
         # Next is AI
-        if self.autoplay and ((self.white_next and self.white is not None) or (not self.white_next and self.black is not None)):
+        elif self.autoplay and ((self.white_next and self.white is not None) or (not self.white_next and self.black is not None)):
             return self.play()
 
-    def playMove(self, move):  # FIXME: Catch Exceptions
-        if not move in self.board.legal_moves:
-            raise Exception("Dumbass, that shit ain't legal")
-        else:
-            self.board.push(move)
-
-        # Check if game is over
-        if self.board.is_checkmate():
-            if self.white_next:
-                return 1
-            else:
-                return 2
-        elif self.board.is_insufficient_material() or self.board.is_stalemate():  # draw
-            return 3
-        elif self.board.is_game_over():
-            return 4
-        else:
-            self.white_next = not self.white_next
-            return None
+        return legal, result
 
 
 if __name__ == '__main__':
 
-    game = Game('Manual')
+    game = Game('manual')
     mate_sequence = ['e2e4', 'e7e5', 'd1h5', 'e8e7', 'h5e5']
     white_sequence = mate_sequence[::2]
     black_sequence = mate_sequence[1::2]

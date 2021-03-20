@@ -1,5 +1,6 @@
 import chess
 import chess.svg
+import game
 
 from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
 from PyQt5.QtSvg import QSvgWidget
@@ -8,12 +9,12 @@ from PyQt5.QtGui import QFont
 
 GAME_MODES = ['Play White', 'Play Black', 'Two Player', 'Auto']
 _GAME_MODES = ['black-auto', 'white-auto', 'manual', 'auto']
-
+RESULTS = ["White won boooiiiii!!", "Black won boooiiiii!!", "issa draw bish..."]
 
 class MainWindow(QWidget):
     move_signal = pyqtSignal()
 
-    def __init__(self, game):
+    def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Zachy's Chess")
@@ -34,15 +35,14 @@ class MainWindow(QWidget):
         self.vbox.setContentsMargins(295, 300, 295, 300)
         self.setLayout(self.vbox)
         # Init game
-        self.initializeGame(game)
+        self.initializeGame()
         self.move_signal.connect(self.newMove)
 
-    def initializeGame(self, game):
+    def initializeGame(self):
         # Chess game
-        self.game = game
-        self.chessboard = game.board
         self.modeChange(0)
-        self.game.change_mode(self.game_mode)
+        self.game = game.Game(self.game_mode, autoplay=True)
+        self.chessboard = self.game.board
         self.selectedPiece = None
         self.pieceToMove = [None, None]
         self.next_move = None
@@ -62,7 +62,9 @@ class MainWindow(QWidget):
     def startButtonEvent(self, event):
         self.startBtn.hide()
         self.modeSelector.hide()
-        self.game.change_mode(self.game_mode)
+        self.modeSelector.setFocusPolicy(Qt.NoFocus)        # TODO: Validate
+        self.game = game.Game(self.game_mode, autoplay=True)
+        self.chessboard = self.game.board
         self.update()
         if self.game_mode == "auto":
             # self.hint = QLabel("Press the spacebar to move")
@@ -74,24 +76,15 @@ class MainWindow(QWidget):
     def replayButtonEvent(self):
         self.result.hide()
         self.replayBtn.hide()
-        self.initializeGame(self.game)
+        self.initializeGame()
 
     def newMove(self):
-        # TODO: Show invalid move, etc.
-        try:
-            result = self.game.play(self.next_move)
+        # TODO: Show illegal move (unselect?), etc.
+        legal, result = self.game.play(self.next_move)
+        if legal:
             self.update()
-        
-            if result == 1: # white wins
-                self.gameOver("White won boooiiiii!!")
-            elif result == 2: # black wins
-                self.gameOver("Black won boooiiiii!!")
-            elif result == 3: # draw
-                self.gameOver("issa draw bish...")
-            elif result == 4: # game over
-                self.gameOver("Game Over")
-        except Exception as e:
-            print(e)
+        if result is not None:
+            self.gameOver(RESULTS[result])
 
     def gameOver(self, message):
         # FIXME: Box Overflows
@@ -159,11 +152,8 @@ class MainWindow(QWidget):
 
 if __name__ == '__main__':
 
-    import game
-    game = game.Game('manual', autoplay=True)
-
     app = QApplication([])
-    window = MainWindow(game)
+    window = MainWindow()
     window.show()
     app.exec()
 
