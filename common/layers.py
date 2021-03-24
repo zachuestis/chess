@@ -2,7 +2,6 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 class NoisyLinear(nn.Module):
     def __init__(self, in_features, out_features, use_cuda, std_init=0.4):
@@ -33,8 +32,8 @@ class NoisyLinear(nn.Module):
             bias_epsilon   = self.bias_epsilon
             
         if self.training: 
-            weight = self.weight_mu + self.weight_sigma.mul(Variable(weight_epsilon))
-            bias   = self.bias_mu   + self.bias_sigma.mul(Variable(bias_epsilon))
+            weight = self.weight_mu + self.weight_sigma.mul(weight_epsilon)
+            bias   = self.bias_mu   + self.bias_sigma.mul(bias_epsilon)
         else:
             weight = self.weight_mu
             bias   = self.bias_mu

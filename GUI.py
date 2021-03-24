@@ -41,7 +41,7 @@ class MainWindow(QWidget):
     def initializeGame(self):
         # Chess game
         self.modeChange(0)
-        self.game = game.Game(self.game_mode, autoplay=True)
+        self.game = game.Game(self.game_mode, autoplay=False)
         self.chessboard = self.game.board
         self.selectedPiece = None
         self.pieceToMove = [None, None]
@@ -62,8 +62,8 @@ class MainWindow(QWidget):
     def startButtonEvent(self, event):
         self.startBtn.hide()
         self.modeSelector.hide()
-        self.modeSelector.setFocusPolicy(Qt.NoFocus)        # TODO: Validate
-        self.game = game.Game(self.game_mode, autoplay=True)
+        self.modeSelector.setFocusPolicy(Qt.NoFocus)        # FIXME: Doesnt solve it
+        self.game = game.Game(self.game_mode, autoplay=False)
         self.chessboard = self.game.board
         self.update()
         if self.game_mode == "auto":

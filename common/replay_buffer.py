@@ -76,18 +76,18 @@ class SegmentTree(object):
     def __setitem__(self, idx, val):
         # index of the leaf
         idx += self._capacity
-        self._value[idx] = val
+        self._value[int(idx)] = val
         idx //= 2
         while idx >= 1:
-            self._value[idx] = self._operation(
-                self._value[2 * idx],
-                self._value[2 * idx + 1]
+            self._value[int(idx)] = self._operation(
+                self._value[2 * int(idx)],
+                self._value[2 * int(idx) + 1]
             )
             idx //= 2
 
     def __getitem__(self, idx):
         assert 0 <= idx < self._capacity
-        return self._value[self._capacity + idx]
+        return self._value[self._capacity + int(idx)]
 
 
 class SumSegmentTree(SegmentTree):
@@ -173,6 +173,7 @@ class ReplayBuffer(object):
             data = self._storage[i]
             obs_t, action, reward, obs_tp1, done = data
             obses_t.append(np.array(obs_t, copy=False))
+            if hasattr(action, 'cpu'): action = action.cpu()
             actions.append(np.array(action, copy=False))
             rewards.append(reward)
             obses_tp1.append(np.array(obs_tp1, copy=False))

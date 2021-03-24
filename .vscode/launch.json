@@ -23,7 +23,7 @@
             "name": "Train",
             "type": "python",
             "request": "launch",
-            "program": "rainbow.py",
+            "program": "prioritizedDQN.py",
             "console": "integratedTerminal"
         }
     ]

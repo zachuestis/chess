@@ -4,23 +4,21 @@
 
 from chessEnv import ChessEnv
 from game import Game
-import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.autograd as autograd
 import torch.nn.functional as F
 
 from common.layers import NoisyLinear
-from common.replay_buffer import ReplayBuffer  # TODO: PrioritizedReplayBuffer
-from common.wrappers import make_atari, wrap_deepmind, wrap_pytorch
+from common.replay_buffer import ReplayBuffer
+from common.wrappers import wrap_pytorch
 
 USE_CUDA = torch.cuda.is_available()
-Variable = lambda *args, **kwargs: autograd.Variable(
-    *args, **kwargs).cuda() if USE_CUDA else autograd.Variable(*args, **kwargs)
+Variable = lambda x: x.cuda() if USE_CUDA else x
 
 
 class RainbowCnnDQN(nn.Module):
@@ -69,8 +67,8 @@ class RainbowCnnDQN(nn.Module):
             batch_size, self.num_actions, self.num_atoms)
 
         x = value + advantage - advantage.mean(1, keepdim=True)
-        x = F.softmax(x.view(-1, self.num_atoms)).view(-1,
-                                                       self.num_actions, self.num_atoms)
+        x = F.softmax(x.view(-1, self.num_atoms), dim=-
+                      1).view(-1, self.num_actions, self.num_atoms)
 
         return x
 
@@ -81,11 +79,10 @@ class RainbowCnnDQN(nn.Module):
         self.noisy_advantage2.reset_noise()
 
     def feature_size(self):
-        return self.features(autograd.Variable(torch.zeros(1, *self.input_shape))).view(1, -1).size(1)
+        return self.features(torch.zeros(1, *self.input_shape)).view(1, -1).size(1)
 
     def act(self, state):
-        state = Variable(torch.FloatTensor(
-            np.float32(state)).unsqueeze(0), volatile=True)
+        state = Variable(torch.FloatTensor(np.float32(state)).unsqueeze(0))
         dist = self.forward(state).data.cpu()
         dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
         action = dist.sum(2).max(1)[1].numpy()[0]
@@ -96,7 +93,6 @@ class RainbowCnnDQN(nn.Module):
 
 def update_target(current_model, target_model):
     target_model.load_state_dict(current_model.state_dict())
-
 
 def projection_distribution(next_state, rewards, dones):
     batch_size = next_state.size(0)
@@ -136,8 +132,7 @@ def compute_td_loss(batch_size):
     state, action, reward, next_state, done = replay_buffer.sample(batch_size)
 
     state = Variable(torch.FloatTensor(np.float32(state)))
-    next_state = Variable(torch.FloatTensor(
-        np.float32(next_state)), volatile=True)
+    next_state = Variable(torch.FloatTensor(np.float32(next_state)))
     action = Variable(torch.LongTensor(action))
     reward = torch.FloatTensor(reward)
     done = torch.FloatTensor(np.float32(done))
@@ -179,7 +174,7 @@ env = ChessEnv(game)
 env = wrap_pytorch(env)
 
 num_atoms = 51
-Vmin = -10 # TODO
+Vmin = -10  # TODO
 Vmax = 10
 
 current_model = RainbowCnnDQN(
@@ -209,18 +204,22 @@ episode_reward = 0
 state = env.reset()
 for frame_idx in range(1, num_frames + 1):
 
-    action = current_model.act(state)
+    with torch.no_grad(): # TODO: Do I need this in other places as well?
+        action = current_model.act(state)
 
-    next_state, reward, done, _ = env.step(action)
-    replay_buffer.push(state, action, reward, next_state, done)
+        next_state, reward, done, _ = env.step(action)
+        replay_buffer.push(state, action, reward, next_state, done)
 
-    state = next_state
-    episode_reward += reward
+        state = next_state
+        episode_reward += reward
 
-    if done:
-        state = env.reset()
-        all_rewards.append(episode_reward)
-        episode_reward = 0
+        if reward != -4e-4:
+            tmp = []
+
+        if done:
+            state = env.reset()
+            all_rewards.append(episode_reward)
+            episode_reward = 0
 
     if len(replay_buffer) > replay_initial:
         loss = compute_td_loss(batch_size)

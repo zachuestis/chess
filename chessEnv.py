@@ -22,7 +22,8 @@ HEIGHT = 64
 WIDTH = 64
 N_CHANNELS = 1
 
-REWARDS = [ -4e-5, -4e-4, 1 , -1 , 0 ]      # move, illegal move, win, loss, draw
+# FIXME: Move reward should be changed to negative, once AI learns to do legal moves
+REWARDS = [ 5e-3, -4e-4, 1 , -1 , 0 ]      # move, illegal move, win, loss, draw
 
 
 class ChessEnv(gym.Env):
@@ -36,10 +37,10 @@ class ChessEnv(gym.Env):
 
     def step(self, action):
         done = False
-        info = []
         # Execute action
         move_name = ACTIONS[action]
         legal, result = self.game.play(move_name)
+        info = 'legal' if legal else None
         # Choose Reward
         if result is not None:
             done = True
@@ -51,7 +52,7 @@ class ChessEnv(gym.Env):
                 reward = REWARDS[4]
         elif legal:
             reward = REWARDS[0]
-        else:           # illegal move
+        else:           # illegal move --> TODO: change reward based on if correct piece was chosen
             reward = REWARDS[1]
         
         # Get new state
@@ -72,7 +73,7 @@ class ChessEnv(gym.Env):
         chessboard = svg2png(chessboard)
         chessboard = np.frombuffer(chessboard, np.uint8)
         chessboard = cv2.imdecode(chessboard, cv2.IMREAD_GRAYSCALE)
-
+        # cv2.imwrite("image_processed.png", chessboard)
         return chessboard.reshape(HEIGHT, WIDTH, N_CHANNELS)
 
 
