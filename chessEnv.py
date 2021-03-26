@@ -9,7 +9,7 @@ import chess.svg
 from cairosvg import svg2png
 import cv2
 
-## Parameters
+# Parameters
 try:
     ACTIONS = pickle.load(open("actions.pkl", "rb"))
 except:
@@ -23,7 +23,7 @@ WIDTH = 128
 N_CHANNELS = 1
 
 # FIXME: Move reward should be changed to negative, once AI learns to do legal moves
-REWARDS = [ 5e-3, -1, 1 , -1 , 0 ]      # move, illegal move, win, loss, draw
+REWARDS = [5e-3, -1, 1, -1, 0]      # move, illegal move, win, loss, draw
 
 
 class ChessEnv(gym.Env):
@@ -56,28 +56,27 @@ class ChessEnv(gym.Env):
         elif legal:
             reward = REWARDS[0]
         else:           # illegal move --> TODO: change reward based on if correct piece was chosen
-            done = True # FIXME
+            done = True  # FIXME
             reward = REWARDS[1]
-        
+
         # Get new state
         observation = self.getCurrentState()     # Next state
-        
+
         return observation, reward, done, info
 
     def reset(self):
         self.game.reset()
-        return self.getCurrentState() 
+        return self.getCurrentState()
 
-    def getCurrentState(self):      
+    def getCurrentState(self):
         # TODO: directly create image / current state
-        flipped = True if self.game.game_mode == 'white-auto' else False
         chessboard = chess.svg.board(
-            self.game.board, size=WIDTH, coordinates=False, flipped=flipped).encode("UTF-8")
-
+            self.game.board, size=WIDTH, coordinates=False).encode("UTF-8")
         chessboard = svg2png(chessboard)
         chessboard = np.frombuffer(chessboard, np.uint8)
         chessboard = cv2.imdecode(chessboard, cv2.IMREAD_GRAYSCALE)
         # cv2.imwrite("image_processed.png", chessboard)
+
         return chessboard.reshape(HEIGHT, WIDTH, N_CHANNELS)
 
 
@@ -89,6 +88,3 @@ if __name__ == "__main__":
 
     state = env.reset()
     env.step(8)
-
-
-

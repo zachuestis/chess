@@ -2,6 +2,8 @@ import chess
 import chess.svg
 import game
 
+from prioritizedDQN import CnnDQN
+
 from PyQt5.QtCore import pyqtSlot, Qt, pyqtSignal
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QLabel
@@ -41,7 +43,7 @@ class MainWindow(QWidget):
     def initializeGame(self):
         # Chess game
         self.modeChange(0)
-        self.game = game.Game(self.game_mode, autoplay=False)
+        self.game = game.Game(self.game_mode, autoplay=True)
         self.chessboard = self.game.board
         self.selectedPiece = None
         self.pieceToMove = [None, None]
@@ -63,7 +65,7 @@ class MainWindow(QWidget):
         self.startBtn.hide()
         self.modeSelector.hide()
         self.modeSelector.setFocusPolicy(Qt.NoFocus)        # FIXME: Doesnt solve it
-        self.game = game.Game(self.game_mode, autoplay=False)
+        self.game = game.Game(self.game_mode, autoplay=True)
         self.chessboard = self.game.board
         self.update()
         if self.game_mode == "auto":
