@@ -18,12 +18,12 @@ except:
     pickle.dump(ACTIONS, open("actions.pkl", "wb"))
 
 N_DISCRETE_ACTIONS = ACTIONS.size
-HEIGHT = 64
-WIDTH = 64
+HEIGHT = 128
+WIDTH = 128
 N_CHANNELS = 1
 
 # FIXME: Move reward should be changed to negative, once AI learns to do legal moves
-REWARDS = [ 5e-3, -4e-4, 1 , -1 , 0 ]      # move, illegal move, win, loss, draw
+REWARDS = [ 5e-3, -1, 1 , -1 , 0 ]      # move, illegal move, win, loss, draw
 
 
 class ChessEnv(gym.Env):
@@ -40,19 +40,23 @@ class ChessEnv(gym.Env):
         # Execute action
         move_name = ACTIONS[action]
         legal, result = self.game.play(move_name)
-        info = 'legal' if legal else None
+        info = 'legal' if legal else 'illegal'
         # Choose Reward
         if result is not None:
             done = True
             if result == 0:         # white wins --> TODO: match player color
+                info += ', white wins'
                 reward = REWARDS[2]
             elif result == 1:       # black wins
+                info += ', black wins'
                 reward = REWARDS[3]
             elif result == 2:       # draw
+                info += ', draw'
                 reward = REWARDS[4]
         elif legal:
             reward = REWARDS[0]
         else:           # illegal move --> TODO: change reward based on if correct piece was chosen
+            done = True # FIXME
             reward = REWARDS[1]
         
         # Get new state

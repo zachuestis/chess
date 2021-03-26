@@ -31,16 +31,18 @@ class CnnDQN(nn.Module):
 		self.num_actions = num_actions
 
 		self.features = nn.Sequential(
-			nn.Conv2d(input_shape[0], 32, kernel_size=3, stride=1),
+			nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
 			nn.ReLU(),
-			nn.Conv2d(32, 64, kernel_size=3, stride=1),
+			nn.Conv2d(32, 64, kernel_size=4, stride=2),
 			nn.ReLU(),
-			nn.Conv2d(64, 64, kernel_size=3, stride=1),
+			nn.Conv2d(64, 64, kernel_size=2, stride=1),
 			nn.ReLU()
 		)
 
 		self.fc = nn.Sequential(
 			nn.Linear(self.feature_size(), 512),
+			nn.ReLU(),
+			nn.ReLU(),
 			nn.ReLU(),
 			nn.Linear(512, self.num_actions)
 		)
@@ -127,8 +129,8 @@ if USE_CUDA:
 
 optimizer = optim.Adam(current_model.parameters(), lr=0.0001)
 
-replay_initial = 10000
-replay_buffer = PrioritizedReplayBuffer(100000, 0.5)
+replay_initial = 5000
+replay_buffer = PrioritizedReplayBuffer(10000, 0.5)
 
 update_target(current_model, target_model)
 
