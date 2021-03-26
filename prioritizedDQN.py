@@ -1,15 +1,12 @@
 # Prioritized DQN 
 # Based on: https://github.com/higgsfield/RL-Adventure
 
-import math
 import random
 import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
-
 
 USE_CUDA = torch.cuda.is_available()
 def Variable(x): return x.cuda() if USE_CUDA else x

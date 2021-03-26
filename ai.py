@@ -1,22 +1,33 @@
 import random
+import pickle
 import numpy as np
-
 import torch
 
+# create image
 import cv2
 import chess.svg
 from chessEnv import HEIGHT, WIDTH, N_CHANNELS
 from cairosvg import svg2png
 
-from common.wrappers import wrap_pytorch
-
 model_path = "model.pkl"
+
+# Parameters
+try:
+    ACTIONS = pickle.load(open("actions.pkl", "rb"))
+except:
+    from common.helper_functions import getAllPossibleMoves
+    ACTIONS = np.array(getAllPossibleMoves())
+    pickle.dump(ACTIONS, open("actions.pkl", "wb"))
+
 
 class AI():
 
     def __init__(self, board):
         self.board = board
-        self.model = torch.load(model_path, map_location={'cuda:0':'cpu'})
+        if torch.cuda.is_available():
+            self.model = torch.load(model_path)
+        else:
+            self.model = torch.load(model_path, map_location={'cuda:0':'cpu'})
 
     def choose_move(self):
         # Currently chooses random legal move
@@ -24,8 +35,9 @@ class AI():
         state = self.getCurrentState()
 
         if self.model:
-            move = self.model.act(state, epsilon=0)  # on-policy
-            if move not in legal_moves: print("AI choose illegal move.")
+            idx = self.model.act(state, epsilon=0)  # on-policy
+            move = chess.Move.from_uci(ACTIONS[idx])
+            if move not in legal_moves: print("AI choose an illegal move.")
             return move if move in legal_moves else random.choice(legal_moves)
         else:
             return random.choice(legal_moves)

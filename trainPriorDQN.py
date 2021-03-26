@@ -1,4 +1,5 @@
 import torch
+import torch.optim as optim
 from prioritizedDQN import *
 
 from game import Game
@@ -7,7 +8,6 @@ from chessEnv import ChessEnv
 from common.replay_buffer import PrioritizedReplayBuffer
 from common.wrappers import wrap_pytorch
 
-import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
