@@ -23,7 +23,7 @@
             "name": "Train",
             "type": "python",
             "request": "launch",
-            "program": "prioritizedDQN.py",
+            "program": "trainPriorDQN.py",
             "console": "integratedTerminal"
         }
     ]

@@ -204,22 +204,18 @@ episode_reward = 0
 state = env.reset()
 for frame_idx in range(1, num_frames + 1):
 
-    with torch.no_grad(): # TODO: Do I need this in other places as well?
-        action = current_model.act(state)
+    action = current_model.act(state)
 
-        next_state, reward, done, _ = env.step(action)
-        replay_buffer.push(state, action, reward, next_state, done)
+    next_state, reward, done, _ = env.step(action)
+    replay_buffer.push(state, action, reward, next_state, done)
 
-        state = next_state
-        episode_reward += reward
+    state = next_state
+    episode_reward += reward
 
-        if reward != -4e-4:
-            tmp = []
-
-        if done:
-            state = env.reset()
-            all_rewards.append(episode_reward)
-            episode_reward = 0
+    if done:
+        state = env.reset()
+        all_rewards.append(episode_reward)
+        episode_reward = 0
 
     if len(replay_buffer) > replay_initial:
         loss = compute_td_loss(batch_size)
